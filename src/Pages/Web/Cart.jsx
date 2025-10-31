@@ -27,20 +27,20 @@ export default function CartPage() {
     (state) => state.CartOpration
   );
 
-  const { Promocodeitem, Promocodeerror, Promocodeloading, appliedPromoResult } = useSelector(
-    (state) => state.PromocodeOpration
-  );
+  // const { Promocodeitem, Promocodeerror, Promocodeloading, appliedPromoResult } = useSelector(
+  //   (state) => state.PromocodeOpration
+  // );
 
   // Local state for loading states
   const [updatingItems, setUpdatingItems] = useState({});
   const [removingItems, setRemovingItems] = useState({});
   const [localCartData, setLocalCartData] = useState([]);
-  const [showPromoModal, setShowPromoModal] = useState(false);
-  const [appliedPromo, setAppliedPromo] = useState(null);
+  // const [showPromoModal, setShowPromoModal] = useState(false);
+  // const [appliedPromo, setAppliedPromo] = useState(null);
 
-  useEffect(() => {
-  dispatch(GetAllPromocodedata());
-}, [dispatch]);
+//   useEffect(() => {
+//   dispatch(GetAllPromocodedata());
+// }, [dispatch]);
   
   // Sync local cart data with Redux state
   useEffect(() => {
@@ -73,11 +73,11 @@ export default function CartPage() {
       ).unwrap();
       toast.success("Quantity updated successfully!");
       // ✅ Recalculate promo if applied
-      if (appliedPromo) {
-        await dispatch(ApplyPromoCode( appliedPromo.promo_code_id || appliedPromo.id )).unwrap();
-      }
+      // if (appliedPromo) {
+      //   await dispatch(ApplyPromoCode( appliedPromo.promo_code_id || appliedPromo.id )).unwrap();
+      // }
       // Optionally refresh cart again
-      await dispatch(GetCartData());
+      //await dispatch(GetCartData());
 
 
     } catch (error) {
@@ -144,29 +144,29 @@ export default function CartPage() {
     }
   };
 
-  // -----------------------------
-  // APPLY PROMO CODE
-  // -----------------------------
-  const handleApplyPromo = async (promo) => {
-    try {
-      const res = await dispatch(ApplyPromoCode(promo.id)).unwrap();
-      if (res?.status) {
-        setAppliedPromo(res.data);
-        toast.success(`${res.data.promo_code} applied successfully!`);
-        setShowPromoModal(false);
-      } else {
-        toast.error("Invalid or expired promo code");
-      }
-    } catch (error) {
-      toast.error("Failed to apply promo code");
-      console.error(error);
-    }
-  };
+  // // -----------------------------
+  // // APPLY PROMO CODE
+  // // -----------------------------
+  // const handleApplyPromo = async (promo) => {
+  //   try {
+  //     const res = await dispatch(ApplyPromoCode(promo.id)).unwrap();
+  //     if (res?.status) {
+  //       setAppliedPromo(res.data);
+  //       toast.success(`${res.data.promo_code} applied successfully!`);
+  //       setShowPromoModal(false);
+  //     } else {
+  //       toast.error("Invalid or expired promo code");
+  //     }
+  //   } catch (error) {
+  //     toast.error("Failed to apply promo code");
+  //     console.error(error);
+  //   }
+  // };
 
-  const handleRemovePromo = () => {
-    setAppliedPromo(null);
-    toast.success("Promo code removed");
-  };
+  // const handleRemovePromo = () => {
+  //   setAppliedPromo(null);
+  //   toast.success("Promo code removed");
+  // };
 
   // Calculate totals based on local cart data for real-time updates
   const subtotal = localCartData.reduce(
@@ -182,12 +182,12 @@ export default function CartPage() {
   let discountAmount = 0;
   let finalTotal = subtotal + shipping + tax;
 
-  if (appliedPromo) {
-    const promoData = appliedPromoResult || appliedPromo;
-    totalAmount = promoData.total_amount || subtotal;
-    discountAmount = promoData.discount_amount || 0;
-    finalTotal = promoData.final_amount || promoData.total_amount || subtotal + shipping + tax;
-  }
+  // if (appliedPromo) {
+  //   const promoData = appliedPromoResult || appliedPromo;
+  //   totalAmount = promoData.total_amount || subtotal;
+  //   discountAmount = promoData.discount_amount || 0;
+  //   finalTotal = promoData.final_amount || promoData.total_amount || subtotal + shipping + tax;
+  // }
 
   const totalSavings = localCartData.reduce(
     (sum, item) =>
@@ -405,7 +405,7 @@ export default function CartPage() {
                     Order Summary
                   </h2>
                   <div className="space-y-3 mb-6">
-                    <div className="flex justify-between items-center text-gray-600">
+                    {/* <div className="flex justify-between items-center text-gray-600">
                       <span>Promo Code</span>
                       <div className="flex items-center gap-2">
                         {appliedPromo ? (
@@ -429,7 +429,7 @@ export default function CartPage() {
                           </button>
                         )}
                       </div>
-                    </div>
+                    </div> */}
                    
                     <div className="flex justify-between text-gray-600">
                       <span>Subtotal ({localCartData.length} items)</span>
@@ -494,7 +494,7 @@ export default function CartPage() {
           </div>
         )}
       </div>
-      {showPromoModal && (
+      {/* {showPromoModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
         <div className="bg-white rounded-xl shadow-lg w-96 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -502,19 +502,19 @@ export default function CartPage() {
           </h3>
 
           {/* Loading state */}
-          {Promocodeloading && (
+          {/* {Promocodeloading && (
             <div className="text-center py-4 text-gray-500">Loading...</div>
-          )}
+          )} */}
 
           {/* Error state */}
-          {Promocodeerror && (
+          {/* {Promocodeerror && (
             <div className="text-center text-red-500 py-4">
               Failed to load promo codes.
             </div>
-          )}
+          )} */}
 
           {/* Promo list */}
-          {!Promocodeloading && !Promocodeerror && Promocodeitem?.length > 0 ? (
+          {/* {!Promocodeloading && !Promocodeerror && Promocodeitem?.length > 0 ? (
             <div className="space-y-3 max-h-80 overflow-y-auto">
               {Promocodeitem?.filter((promo) => promo.is_active === true && promo.is_deleted === false)?.map((promo) => (
                 <div
@@ -541,18 +541,18 @@ export default function CartPage() {
                 No promo codes available
               </div>
             )
-          )}
+          )} */}
 
           {/* Cancel button */}
-          <button
+          {/* <button
             onClick={() => setShowPromoModal(false)}
             className="w-full mt-5 text-center text-gray-600 hover:text-gray-800"
           >
             Cancel
           </button>
         </div>
-      </div>
-      )}
+      </div> */}
+      {/* )}  */}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { GetCartData } from "../../../Redux/Features/CartServicesSlice";
 import { OrderPlace } from "../../../Redux/Features/OrderServicesSlice";
 import { PaymentInfo } from "../../../Redux/Features/PaymentServicesSlice";
+import { GetAllPromocodedata, ApplyPromoCode } from "../../../Redux/Features/PromoCodeServicesSlice";
 
 export default function PaymentPage() {
   const navigate = useNavigate();
@@ -28,6 +29,15 @@ export default function PaymentPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [razorpayInstance, setRazorpayInstance] = useState(null); // Store razorpay instance
 
+  const { Promocodeitem, Promocodeerror, Promocodeloading, appliedPromoResult } = useSelector(
+    (state) => state.PromocodeOpration
+  );
+  const [showPromoModal, setShowPromoModal] = useState(false);
+  const [appliedPromo, setAppliedPromo] = useState(null);
+
+  useEffect(() => {
+    dispatch(GetAllPromocodedata());
+  }, [dispatch]);
   useEffect(() => {
     dispatch(GetCartData());
     dispatch(PaymentInfo());
@@ -75,15 +85,46 @@ export default function PaymentPage() {
     });
   };
 
+  // -----------------------------
+  // APPLY PROMO CODE
+  // -----------------------------
+  const handleApplyPromo = async (promo) => {
+    try {
+      const res = await dispatch(ApplyPromoCode(promo.id)).unwrap();
+      if (res?.status) {
+        setAppliedPromo(res.data);
+        toast.success(`${res.data.promo_code} applied successfully!`);
+        setShowPromoModal(false);
+      } else {
+        toast.error("Invalid or expired promo code");
+      }
+    } catch (error) {
+      toast.error("Failed to apply promo code");
+      console.error(error);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null);
+    toast.success("Promo code removed");
+  };
+
   // Dynamic calculations
   const safeTotal = Number(total || 0);
   const shipping = total > 50 ? 0 : 9.99;
   const tax = (total * 0.08).toFixed(2);
-  const fulltotal = (
-    safeTotal +
-    parseFloat(shipping) +
-    parseFloat(tax)
-  ).toFixed(2);
+  //const total = subtotal + shipping + tax;
+  let totalAmount = safeTotal;
+  let discountAmount = 0;
+  let finalTotal = ( safeTotal + parseFloat(shipping) + parseFloat(tax) ).toFixed(2);
+
+  if (appliedPromo) {
+    const promoData = appliedPromoResult || appliedPromo;
+    totalAmount = promoData.total_amount || safeTotal;
+    discountAmount = promoData.discount_amount || 0;
+    finalTotal = promoData.final_amount || promoData.total_amount || safeTotal + shipping + tax;
+  }
+  //const fulltotal = ( safeTotal + parseFloat(shipping) + parseFloat(tax) ).toFixed(2);
 
   // Get payment method icon dynamically
   const getPaymentIcon = (methodName) => {
@@ -153,7 +194,8 @@ export default function PaymentPage() {
 
       const options = {
         key: selectedMethod?.key_id,
-        amount: Math.round(fulltotal * 100),
+        amount: Math.round(finalTotal * 100),
+        // amount: Math.round(fulltotal * 100),
         currency: "INR",
         name: "KamaiKart",
         description: "Order Payment",
@@ -464,9 +506,35 @@ export default function PaymentPage() {
                 </h2>
 
                 <div className="space-y-3 mb-6">
+                    <div className="flex justify-between items-center text-gray-600">
+                      <span>Promo Code</span>
+                      <div className="flex items-center gap-2">
+                        {appliedPromo ? (
+                          <>
+                            <span className="text-green-600 font-medium">
+                              {appliedPromo.promo_code}
+                            </span>
+                            <button
+                              onClick={handleRemovePromo}
+                              className="text-red-500 text-sm hover:underline"
+                            >
+                              Remove
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => setShowPromoModal(true)}
+                            className="bg-blue-600 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-700"
+                          >
+                            + Add
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   <div className="flex justify-between text-gray-600">
                     <span>Subtotal</span>
-                    <span>₹{safeTotal.toFixed(2)}</span>
+                    {/* <span>₹{safeTotal.toFixed(2)}</span> */}
+                    <span>₹{totalAmount.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-gray-600">
                     <span>Shipping</span>
@@ -478,12 +546,19 @@ export default function PaymentPage() {
                     <span>Tax (18%)</span>
                     <span>₹{tax}</span>
                   </div>
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between text-blue-600">
+                      <span>Promo Discount</span>
+                      <span>- ₹{discountAmount.toFixed(2)}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="border-t border-gray-200 pt-4 mb-6">
                   <div className="flex justify-between text-lg font-bold text-gray-900">
                     <span>Total</span>
-                    <span>₹{fulltotal}</span>
+                    {/* <span>₹{fulltotal}</span> */}
+                    <span>₹{finalTotal}</span>
                   </div>
                 </div>
 
@@ -535,6 +610,65 @@ export default function PaymentPage() {
                   Secure payment • SSL encrypted
                 </div>
               </div>
+              {showPromoModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                <div className="bg-white rounded-xl shadow-lg w-96 p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Select a Promo Code
+                  </h3>
+
+                  {/* Loading state */}
+                  {Promocodeloading && (
+                    <div className="text-center py-4 text-gray-500">Loading...</div>
+                  )}
+
+                  {/* Error state */}
+                  {Promocodeerror && (
+                    <div className="text-center text-red-500 py-4">
+                      Failed to load promo codes.
+                    </div>
+                  )}
+
+                  {/* Promo list */}
+                  {!Promocodeloading && !Promocodeerror && Promocodeitem?.length > 0 ? (
+                    <div className="space-y-3 max-h-80 overflow-y-auto">
+                      {Promocodeitem?.filter((promo) => promo.is_active === true && promo.is_deleted === false)?.map((promo) => (
+                        <div
+                          key={promo.id}
+                          className="border border-gray-200 rounded-lg p-3 flex justify-between items-center hover:bg-gray-50 transition cursor-pointer"
+                        >
+                          <div>
+                            <p className="font-medium text-gray-900">{promo.code}</p>
+                            <p className="text-sm text-gray-600">{promo.description}</p>
+                          </div>
+                          <button
+                            onClick={() => handleApplyPromo(promo)}
+                            className="bg-blue-600 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-700"
+                          >
+                            Apply
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    !Promocodeloading &&
+                    !Promocodeerror && (
+                      <div className="text-center text-gray-500 py-4">
+                        No promo codes available
+                      </div>
+                    )
+                  )}
+
+                  {/* Cancel button */}
+                  <button
+                    onClick={() => setShowPromoModal(false)}
+                    className="w-full mt-5 text-center text-gray-600 hover:text-gray-800"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
