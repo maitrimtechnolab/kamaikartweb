@@ -11,6 +11,7 @@ import { CartServices } from "../Features/CartServicesSlice";
 import { UserAddressServices } from "../Features/AddressServicesSlice";
 import { OrderServices } from "../Features/OrderServicesSlice";
 import { PaymentServices } from "../Features/PaymentServicesSlice";
+import { PromoCodeServices } from "../Features/PromoCodeServicesSlice";
 
 export const Store = configureStore({
   reducer: {
@@ -23,6 +24,7 @@ export const Store = configureStore({
     ProductOpration: ProductServices.reducer,
     WishlistOpration: WishlistServices.reducer,
     CartOpration: CartServices.reducer,
+    PromocodeOpration: PromoCodeServices.reducer,
     UserAddressOpration: UserAddressServices.reducer,
     OrderOpration: OrderServices.reducer,
     PaymentOpration: PaymentServices.reducer,

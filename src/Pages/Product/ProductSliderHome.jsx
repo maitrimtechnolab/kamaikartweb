@@ -321,7 +321,7 @@ export default function ProductSliderHome({ Productdata, sliderbox = 5 }) {
   const ProductCard = ({ item }) => {
     const isWishlisted = Wishlistitem.includes(item.id) || item.is_wishlist;
     return (
-      <div className={`${isMobile ? "w-[160px]" : "w-[250px]"} mx-auto`}>
+      <div className={`${isMobile ? "w-[160px]" : ""} mx-auto`}>
         <div className="group relative bg-white rounded-xl lg:rounded-2xl shadow-sm hover:shadow-lg border border-gray-100 overflow-hidden flex flex-col h-full min-h-[320px] lg:min-h-[380px] transition-all duration-300">
           {/* Image */}
           <div

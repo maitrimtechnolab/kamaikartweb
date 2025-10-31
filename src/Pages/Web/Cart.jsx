@@ -18,6 +18,7 @@ import {
 } from "../../Redux/Features/CartServicesSlice";
 import toast from "react-hot-toast";
 import { AddWishlist } from "../../Redux/Features/WishlistServicesSlice";
+import { GetAllPromocodedata, ApplyPromoCode } from "../../Redux/Features/PromoCodeServicesSlice";
 
 export default function CartPage() {
   const navigate = useNavigate();
@@ -26,11 +27,21 @@ export default function CartPage() {
     (state) => state.CartOpration
   );
 
+  const { Promocodeitem, Promocodeerror, Promocodeloading, appliedPromoResult } = useSelector(
+    (state) => state.PromocodeOpration
+  );
+
   // Local state for loading states
   const [updatingItems, setUpdatingItems] = useState({});
   const [removingItems, setRemovingItems] = useState({});
   const [localCartData, setLocalCartData] = useState([]);
+  const [showPromoModal, setShowPromoModal] = useState(false);
+  const [appliedPromo, setAppliedPromo] = useState(null);
 
+  useEffect(() => {
+  dispatch(GetAllPromocodedata());
+}, [dispatch]);
+  
   // Sync local cart data with Redux state
   useEffect(() => {
     if (CartData && CartData.length > 0) {
@@ -61,6 +72,14 @@ export default function CartPage() {
         UpdateQuentity({ product_id: id, quantity: newQuantity })
       ).unwrap();
       toast.success("Quantity updated successfully!");
+      // ✅ Recalculate promo if applied
+      if (appliedPromo) {
+        await dispatch(ApplyPromoCode( appliedPromo.promo_code_id || appliedPromo.id )).unwrap();
+      }
+      // Optionally refresh cart again
+      await dispatch(GetCartData());
+
+
     } catch (error) {
       // Revert optimistic update if API call fails
       setLocalCartData(CartData);
@@ -125,6 +144,30 @@ export default function CartPage() {
     }
   };
 
+  // -----------------------------
+  // APPLY PROMO CODE
+  // -----------------------------
+  const handleApplyPromo = async (promo) => {
+    try {
+      const res = await dispatch(ApplyPromoCode(promo.id)).unwrap();
+      if (res?.status) {
+        setAppliedPromo(res.data);
+        toast.success(`${res.data.promo_code} applied successfully!`);
+        setShowPromoModal(false);
+      } else {
+        toast.error("Invalid or expired promo code");
+      }
+    } catch (error) {
+      toast.error("Failed to apply promo code");
+      console.error(error);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null);
+    toast.success("Promo code removed");
+  };
+
   // Calculate totals based on local cart data for real-time updates
   const subtotal = localCartData.reduce(
     (sum, item) => sum + (item.sellingPrice || 0) * (item.quantity || 0),
@@ -132,7 +175,20 @@ export default function CartPage() {
   );
   const shipping = subtotal > 50 ? 0 : 9.99;
   const tax = subtotal * 0.08;
-  const total = subtotal + shipping + tax;
+
+  
+  //const total = subtotal + shipping + tax;
+  let totalAmount = subtotal;
+  let discountAmount = 0;
+  let finalTotal = subtotal + shipping + tax;
+
+  if (appliedPromo) {
+    const promoData = appliedPromoResult || appliedPromo;
+    totalAmount = promoData.total_amount || subtotal;
+    discountAmount = promoData.discount_amount || 0;
+    finalTotal = promoData.final_amount || promoData.total_amount || subtotal + shipping + tax;
+  }
+
   const totalSavings = localCartData.reduce(
     (sum, item) =>
       sum +
@@ -349,9 +405,36 @@ export default function CartPage() {
                     Order Summary
                   </h2>
                   <div className="space-y-3 mb-6">
+                    <div className="flex justify-between items-center text-gray-600">
+                      <span>Promo Code</span>
+                      <div className="flex items-center gap-2">
+                        {appliedPromo ? (
+                          <>
+                            <span className="text-green-600 font-medium">
+                              {appliedPromo.promo_code}
+                            </span>
+                            <button
+                              onClick={handleRemovePromo}
+                              className="text-red-500 text-sm hover:underline"
+                            >
+                              Remove
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => setShowPromoModal(true)}
+                            className="bg-blue-600 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-700"
+                          >
+                            + Add
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                   
                     <div className="flex justify-between text-gray-600">
                       <span>Subtotal ({localCartData.length} items)</span>
-                      <span>₹{subtotal.toLocaleString()}</span>
+                      
+                      <span>₹{totalAmount.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-gray-600">
                       <span>Shipping</span>
@@ -363,6 +446,12 @@ export default function CartPage() {
                       <span>Tax</span>
                       <span>₹{tax.toFixed(2)}</span>
                     </div>
+                    {discountAmount > 0 && (
+                      <div className="flex justify-between text-blue-600">
+                        <span>Promo Discount</span>
+                        <span>- ₹{discountAmount.toFixed(2)}</span>
+                      </div>
+                    )}
                     {totalSavings > 0 && (
                       <div className="flex justify-between text-green-600">
                         <span>Total Savings</span>
@@ -370,10 +459,11 @@ export default function CartPage() {
                       </div>
                     )}
                   </div>
+                
                   <div className="border-t border-gray-200 pt-4 mb-6">
                     <div className="flex justify-between text-lg font-bold text-gray-900">
                       <span>Total</span>
-                      <span>₹{total.toFixed(2)}</span>
+                      <span>₹{finalTotal.toFixed(2)}</span>
                     </div>
                   </div>
                   <button
@@ -404,6 +494,65 @@ export default function CartPage() {
           </div>
         )}
       </div>
+      {showPromoModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl shadow-lg w-96 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Select a Promo Code
+          </h3>
+
+          {/* Loading state */}
+          {Promocodeloading && (
+            <div className="text-center py-4 text-gray-500">Loading...</div>
+          )}
+
+          {/* Error state */}
+          {Promocodeerror && (
+            <div className="text-center text-red-500 py-4">
+              Failed to load promo codes.
+            </div>
+          )}
+
+          {/* Promo list */}
+          {!Promocodeloading && !Promocodeerror && Promocodeitem?.length > 0 ? (
+            <div className="space-y-3 max-h-80 overflow-y-auto">
+              {Promocodeitem?.filter((promo) => promo.is_active === true && promo.is_deleted === false)?.map((promo) => (
+                <div
+                  key={promo.id}
+                  className="border border-gray-200 rounded-lg p-3 flex justify-between items-center hover:bg-gray-50 transition cursor-pointer"
+                >
+                  <div>
+                    <p className="font-medium text-gray-900">{promo.code}</p>
+                    <p className="text-sm text-gray-600">{promo.description}</p>
+                  </div>
+                  <button
+                    onClick={() => handleApplyPromo(promo)}
+                    className="bg-blue-600 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-700"
+                  >
+                    Apply
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            !Promocodeloading &&
+            !Promocodeerror && (
+              <div className="text-center text-gray-500 py-4">
+                No promo codes available
+              </div>
+            )
+          )}
+
+          {/* Cancel button */}
+          <button
+            onClick={() => setShowPromoModal(false)}
+            className="w-full mt-5 text-center text-gray-600 hover:text-gray-800"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+      )}
     </div>
   );
 }

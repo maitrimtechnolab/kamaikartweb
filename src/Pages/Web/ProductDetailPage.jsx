@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import DOMPurify from "dompurify";
 
 import { GetProductdatabyId } from "../../Redux/Features/ProductServicesSlice";
@@ -15,6 +15,7 @@ import { AddTOCart } from "../../Redux/Features/CartServicesSlice";
 import toast from "react-hot-toast";
 
 export const Product_Detail = () => {
+  const navigate = useNavigate();
   const { id } = useParams();
   const dispatch = useDispatch();
 
@@ -198,9 +199,24 @@ export const Product_Detail = () => {
     // Add to cart logic here
   });
 
-  const handleBuyNow = useCallback(() => {
+  const handleBuyNow = useCallback(async() => {
     // Navigate to checkout
-  }, []);
+   
+    try {
+      toast.success("Item added to cart!");
+
+      // ✅ Pass full address object to checkout page
+      navigate("/checkout", {
+        state: {
+          product_id: product.id,
+          variant_id: selectedVariant?.id,
+        },
+      });
+    } catch (error) {
+      toast.error("Something went wrong while buying the product.");
+      console.error(error);
+    }
+  });
 
   const toggleWishlist = useCallback(async () => {
     try {

@@ -16,7 +16,7 @@ export const AddTOCart = createAsyncThunk(
 );
 
 export const UpdateQuentity = createAsyncThunk(
-  "update /Cart",
+  "update/Cart",
   async ({ product_id, quantity }, { rejectWithValue }) => {
     try {
       const res = await CartService.UpdateCartQuentity(product_id, quantity);
@@ -121,7 +121,6 @@ export const CartServices = createSlice({
           item.quantity = quantity;
         }
       })
-
       .addCase(UpdateQuentity.rejected, (state, action) => {
         state.CartLoading = false;
         state.CartError = action.payload;
