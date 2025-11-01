@@ -14,13 +14,12 @@ export const PromocodeService = {
   },
   applyPromoCode: async (data) => {
     try {
-      const res = await API.post(
-        "/web/checkout",
-        data,
-        {
-          withCredentials: true,
-        }
-      );
+      const res = await API.post("/web/checkout", data, {
+        withCredentials: true,
+      });
+
+      console.log("hiii");
+
       return res.data;
     } catch (error) {
       throw error.response?.data || error.message;
