@@ -6,7 +6,11 @@ import toast from "react-hot-toast";
 import { GetCartData } from "../../../Redux/Features/CartServicesSlice";
 import { OrderPlace } from "../../../Redux/Features/OrderServicesSlice";
 import { PaymentInfo } from "../../../Redux/Features/PaymentServicesSlice";
-import { GetAllPromocodedata, ApplyPromoCode } from "../../../Redux/Features/PromoCodeServicesSlice";
+import {
+  GetAllPromocodedata,
+  ApplyPromoCode,
+} from "../../../Redux/Features/PromoCodeServicesSlice";
+import { BuyNow } from "../../../Redux/Features/BuynowServicesSlice";
 
 export default function PaymentPage() {
   const navigate = useNavigate();
@@ -15,6 +19,8 @@ export default function PaymentPage() {
 
   // Get selected address from navigation state
   const selectedAddress = location.state?.selectedAddress;
+  const buynow = location.state?.buyNowData;
+  const fromBuyNow = location.state?.fromBuyNow;
 
   // Redux selectors
   const { total } = useSelector((state) => state.CartOpration);
@@ -29,9 +35,12 @@ export default function PaymentPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [razorpayInstance, setRazorpayInstance] = useState(null); // Store razorpay instance
 
-  const { Promocodeitem, Promocodeerror, Promocodeloading, appliedPromoResult } = useSelector(
-    (state) => state.PromocodeOpration
-  );
+  const {
+    Promocodeitem,
+    Promocodeerror,
+    Promocodeloading,
+    appliedPromoResult,
+  } = useSelector((state) => state.PromocodeOpration);
   const [showPromoModal, setShowPromoModal] = useState(false);
   const [appliedPromo, setAppliedPromo] = useState(null);
 
@@ -110,19 +119,27 @@ export default function PaymentPage() {
   };
 
   // Dynamic calculations
-  const safeTotal = Number(total || 0);
+  //const safeTotal = Number(total || 0);
+  const safeTotal = fromBuyNow
+    ? Number(buynow?.selling_price || buynow?.price || 0)
+    : Number(total || 0);
   const shipping = total > 50 ? 0 : 9.99;
-  const tax = (total * 0.08).toFixed(2);
+  const tax = (safeTotal * 0.08).toFixed(2);
   //const total = subtotal + shipping + tax;
   let totalAmount = safeTotal;
   let discountAmount = 0;
-  let finalTotal = ( safeTotal + parseFloat(shipping) + parseFloat(tax) ).toFixed(2);
+  let finalTotal = (safeTotal + parseFloat(shipping) + parseFloat(tax)).toFixed(
+    2
+  );
 
   if (appliedPromo) {
     const promoData = appliedPromoResult || appliedPromo;
     totalAmount = promoData.total_amount || safeTotal;
     discountAmount = promoData.discount_amount || 0;
-    finalTotal = promoData.final_amount || promoData.total_amount || safeTotal + shipping + tax;
+    finalTotal =
+      promoData.final_amount ||
+      promoData.total_amount ||
+      safeTotal + shipping + tax;
   }
   //const fulltotal = ( safeTotal + parseFloat(shipping) + parseFloat(tax) ).toFixed(2);
 
@@ -253,6 +270,73 @@ export default function PaymentPage() {
   };
 
   // Payment ke baad order create karein
+  // const createOrderAfterPayment = async (paymentId) => {
+  //   try {
+  //     const selectedMethod = getSelectedMethod();
+
+  //     const orderData = {
+  //       payment_id: selectedMethod?.id,
+  //       address_id: parseInt(selectedAddress.id),
+  //       razorpay_payment_id: paymentId,
+  //       // razorpay_payment_id: paymentId,
+  //       // payment_status: "completed",
+  //       // total_amount: fulltotal,
+  //     };
+  //     console.log(paymentId);
+
+  //     const result = await dispatch(OrderPlace(orderData)).unwrap();
+
+  //     if (result.status === "success") {
+  //       toast.success("Order placed successfully!");
+  //       navigate("/order-confirmation", {
+  //         state: {
+  //           orderData: result,
+  //         },
+  //       });
+  //     } else {
+  //       throw new Error(result.message || "Failed to create order");
+  //     }
+  //   } catch (error) {
+  //     console.error("Order creation error:", error);
+  //     toast.error("Order creation failed");
+  //   } finally {
+  //     resetProcessingState(); // Always reset processing state
+  //   }
+  // };
+
+  // Cash on Delivery order create karein
+  // const createCODOrder = async () => {
+  //   try {
+  //     const selectedMethod = getSelectedMethod();
+
+  //     const orderData = {
+  //       payment_id: selectedMethod?.id,
+  //       address_id: parseInt(selectedAddress.id),
+  //       // payment_method_id: selectedPaymentMethod,
+  //       // payment_status: "pending",
+  //       // total_amount: fulltotal,
+  //     };
+
+  //     const result = await dispatch(OrderPlace(orderData)).unwrap();
+
+  //     if (result.status === "success") {
+  //       toast.success("Order placed successfully!");
+  //       navigate("/order-confirmation", {
+  //         state: {
+  //           orderData: result,
+  //         },
+  //       });
+  //     } else {
+  //       throw new Error(result.message || "Failed to create order");
+  //     }
+  //   } catch (error) {
+  //     console.error("Order creation error:", error);
+  //     toast.error(error.message || "Order creation failed");
+  //   } finally {
+  //     setIsProcessing(false);
+  //   }
+  // };
+
   const createOrderAfterPayment = async (paymentId) => {
     try {
       const selectedMethod = getSelectedMethod();
@@ -261,13 +345,24 @@ export default function PaymentPage() {
         payment_id: selectedMethod?.id,
         address_id: parseInt(selectedAddress.id),
         razorpay_payment_id: paymentId,
-        // razorpay_payment_id: paymentId,
-        // payment_status: "completed",
-        // total_amount: fulltotal,
       };
-      console.log(paymentId);
+      let result;
 
-      const result = await dispatch(OrderPlace(orderData)).unwrap();
+      if (fromBuyNow && buynow) {
+        // 🔹 Call BuyNow API instead of OrderPlace
+        result = await dispatch(
+          BuyNow({
+            product_id: buynow.product_id,
+            variant_id: buynow.variant_id,
+            address_id: parseInt(selectedAddress.id),
+            payment_id: selectedMethod?.id,
+            razor_payment_id: paymentId,
+          })
+        ).unwrap();
+      } else {
+        // 🔹 Normal cart order flow
+        result = await dispatch(OrderPlace(orderData)).unwrap();
+      }
 
       if (result.status === "success") {
         toast.success("Order placed successfully!");
@@ -286,21 +381,35 @@ export default function PaymentPage() {
       resetProcessingState(); // Always reset processing state
     }
   };
-
-  // Cash on Delivery order create karein
   const createCODOrder = async () => {
     try {
       const selectedMethod = getSelectedMethod();
+      let result;
 
-      const orderData = {
-        payment_id: selectedMethod?.id,
-        address_id: parseInt(selectedAddress.id),
-        // payment_method_id: selectedPaymentMethod,
-        // payment_status: "pending",
-        // total_amount: fulltotal,
-      };
+      if (fromBuyNow && buynow) {
+        // 🔹 Call BuyNow thunk
+        result = await dispatch(
+          BuyNow({
+            product_id: buynow.product_id,
+            variant_id: buynow.variant_id,
+            address_id: parseInt(selectedAddress.id),
+            payment_id: selectedMethod?.id,
+            razor_payment_id: null,
+          })
+        ).unwrap();
+      } else {
+        // 🔹 Normal cart order
 
-      const result = await dispatch(OrderPlace(orderData)).unwrap();
+        const orderData = {
+          payment_id: selectedMethod?.id,
+          address_id: parseInt(selectedAddress.id),
+          // payment_method_id: selectedPaymentMethod,
+          // payment_status: "pending",
+          // total_amount: fulltotal,
+        };
+
+        result = await dispatch(OrderPlace(orderData)).unwrap();
+      }
 
       if (result.status === "success") {
         toast.success("Order placed successfully!");
@@ -319,7 +428,6 @@ export default function PaymentPage() {
       setIsProcessing(false);
     }
   };
-
   // Handle place order - FIXED
   const handlePlaceOrder = async () => {
     if (!selectedPaymentMethod) {
@@ -506,31 +614,31 @@ export default function PaymentPage() {
                 </h2>
 
                 <div className="space-y-3 mb-6">
-                    <div className="flex justify-between items-center text-gray-600">
-                      <span>Promo Code</span>
-                      <div className="flex items-center gap-2">
-                        {appliedPromo ? (
-                          <>
-                            <span className="text-green-600 font-medium">
-                              {appliedPromo.promo_code}
-                            </span>
-                            <button
-                              onClick={handleRemovePromo}
-                              className="text-red-500 text-sm hover:underline"
-                            >
-                              Remove
-                            </button>
-                          </>
-                        ) : (
+                  <div className="flex justify-between items-center text-gray-600">
+                    <span>Promo Code</span>
+                    <div className="flex items-center gap-2">
+                      {appliedPromo ? (
+                        <>
+                          <span className="text-green-600 font-medium">
+                            {appliedPromo.promo_code}
+                          </span>
                           <button
-                            onClick={() => setShowPromoModal(true)}
-                            className="bg-blue-600 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-700"
+                            onClick={handleRemovePromo}
+                            className="text-red-500 text-sm hover:underline"
                           >
-                            + Add
+                            Remove
                           </button>
-                        )}
-                      </div>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => setShowPromoModal(true)}
+                          className="bg-blue-600 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-700"
+                        >
+                          + Add
+                        </button>
+                      )}
                     </div>
+                  </div>
                   <div className="flex justify-between text-gray-600">
                     <span>Subtotal</span>
                     {/* <span>₹{safeTotal.toFixed(2)}</span> */}
@@ -612,61 +720,73 @@ export default function PaymentPage() {
               </div>
               {showPromoModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-                <div className="bg-white rounded-xl shadow-lg w-96 p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                    Select a Promo Code
-                  </h3>
+                  <div className="bg-white rounded-xl shadow-lg w-96 p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      Select a Promo Code
+                    </h3>
 
-                  {/* Loading state */}
-                  {Promocodeloading && (
-                    <div className="text-center py-4 text-gray-500">Loading...</div>
-                  )}
-
-                  {/* Error state */}
-                  {Promocodeerror && (
-                    <div className="text-center text-red-500 py-4">
-                      Failed to load promo codes.
-                    </div>
-                  )}
-
-                  {/* Promo list */}
-                  {!Promocodeloading && !Promocodeerror && Promocodeitem?.length > 0 ? (
-                    <div className="space-y-3 max-h-80 overflow-y-auto">
-                      {Promocodeitem?.filter((promo) => promo.is_active === true && promo.is_deleted === false)?.map((promo) => (
-                        <div
-                          key={promo.id}
-                          className="border border-gray-200 rounded-lg p-3 flex justify-between items-center hover:bg-gray-50 transition cursor-pointer"
-                        >
-                          <div>
-                            <p className="font-medium text-gray-900">{promo.code}</p>
-                            <p className="text-sm text-gray-600">{promo.description}</p>
-                          </div>
-                          <button
-                            onClick={() => handleApplyPromo(promo)}
-                            className="bg-blue-600 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-700"
-                          >
-                            Apply
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    !Promocodeloading &&
-                    !Promocodeerror && (
-                      <div className="text-center text-gray-500 py-4">
-                        No promo codes available
+                    {/* Loading state */}
+                    {Promocodeloading && (
+                      <div className="text-center py-4 text-gray-500">
+                        Loading...
                       </div>
-                    )
-                  )}
+                    )}
 
-                  {/* Cancel button */}
-                  <button
-                    onClick={() => setShowPromoModal(false)}
-                    className="w-full mt-5 text-center text-gray-600 hover:text-gray-800"
-                  >
-                    Cancel
-                  </button>
-                </div>
+                    {/* Error state */}
+                    {Promocodeerror && (
+                      <div className="text-center text-red-500 py-4">
+                        Failed to load promo codes.
+                      </div>
+                    )}
+
+                    {/* Promo list */}
+                    {!Promocodeloading &&
+                    !Promocodeerror &&
+                    Promocodeitem?.length > 0 ? (
+                      <div className="space-y-3 max-h-80 overflow-y-auto">
+                        {Promocodeitem?.filter(
+                          (promo) =>
+                            promo.is_active === true &&
+                            promo.is_deleted === false
+                        )?.map((promo) => (
+                          <div
+                            key={promo.id}
+                            className="border border-gray-200 rounded-lg p-3 flex justify-between items-center hover:bg-gray-50 transition cursor-pointer"
+                          >
+                            <div>
+                              <p className="font-medium text-gray-900">
+                                {promo.code}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                {promo.description}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => handleApplyPromo(promo)}
+                              className="bg-blue-600 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-700"
+                            >
+                              Apply
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      !Promocodeloading &&
+                      !Promocodeerror && (
+                        <div className="text-center text-gray-500 py-4">
+                          No promo codes available
+                        </div>
+                      )
+                    )}
+
+                    {/* Cancel button */}
+                    <button
+                      onClick={() => setShowPromoModal(false)}
+                      className="w-full mt-5 text-center text-gray-600 hover:text-gray-800"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

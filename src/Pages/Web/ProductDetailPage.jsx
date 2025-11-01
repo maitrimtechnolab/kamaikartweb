@@ -14,12 +14,19 @@ import {
 import { AddTOCart } from "../../Redux/Features/CartServicesSlice";
 import { BuyNow } from "../../Redux/Features/BuynowServicesSlice";
 import toast from "react-hot-toast";
+import { AuthModal } from "./AuthModal";
+import {
+  openAuthModal,
+  closeAuthModal,
+} from "../../Redux/Features/AuthenticationServicesSlice";
 
 export const Product_Detail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const dispatch = useDispatch();
+  const { isLoggedIn } = useSelector((state) => state.AuthOpration);
 
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
   const {
     PersonalProductdata: product,
     loading,
@@ -179,82 +186,148 @@ export const Product_Detail = () => {
 
   const canAddToCart = currentVariant && currentVariant.stock > 0;
 
-  const handleAddToCart = useCallback(async () => {
-    if (!canAddToCart) {
-      alert("Please select an available variant");
-      return;
-    }
+  const requireAuth = useCallback(
+    (callback) => {
+      if (!isLoggedIn) {
+        setIsAuthOpen(true);
+        return false;
+      }
+      callback();
+      return true;
+    },
+    [isLoggedIn] // <-- add this
+  );
 
-    try {
-      await dispatch(
-        AddTOCart({
-          product_id: product.id,
-          variant_id: selectedVariant?.id,
-        })
-      ).unwrap();
-      toast.success("Item added to cart!");
-    } catch (err) {
-      toast.error(err || "Failed to add to cart");
-    }
+  // const handleAddToCart = useCallback(async () => {
+  //   if (!canAddToCart) {
+  //     alert("Please select an available variant");
+  //     return;
+  //   }
 
-    // Add to cart logic here
-  });
+  //   try {
+  //     await dispatch(
+  //       AddTOCart({
+  //         product_id: product.id,
+  //         variant_id: selectedVariant?.id,
+  //       })
+  //     ).unwrap();
+  //     toast.success("Item added to cart!");
+  //   } catch (err) {
+  //     toast.error(err || "Failed to add to cart");
+  //   }
 
-  const handleBuyNow = useCallback(async() => {
-    // Navigate to checkout
-    // if (!selectedVariant) {
-    //   toast.error("Please select a variant first!");
-    //   return;
-    // }
-    try {
-      // const res = await dispatch(
-      //   BuyNow({
-      //     product_id: product.id,
-      //     variant_id: selectedVariant.id,
-      //   })
-      // ).unwrap();
-      //toast.success("Item added to cart!");
+  //   // Add to cart logic here
+  // });
+  const handleAddToCart = useCallback(() => {
+    requireAuth(async () => {
+      if (!canAddToCart) {
+        alert("Please select an available variant");
+        return;
+      }
 
-      // ✅ Pass full address object to checkout page
+      try {
+        await dispatch(
+          AddTOCart({
+            product_id: product.id,
+            variant_id: selectedVariant?.id,
+          })
+        ).unwrap();
+        toast.success("Item added to cart!");
+      } catch (err) {
+        toast.error(err || "Failed to add to cart");
+      }
+    });
+  }, [dispatch, requireAuth, product, selectedVariant, canAddToCart]);
+
+  // const handleBuyNow = useCallback(async () => {
+  //   // Navigate to checkout
+  //   // if (!selectedVariant) {
+  //   //   toast.error("Please select a variant first!");
+  //   //   return;
+  //   // }
+  //   try {
+  //     // const res = await dispatch(
+  //     //   BuyNow({
+  //     //     product_id: product.id,
+  //     //     variant_id: selectedVariant.id,
+  //     //   })
+  //     // ).unwrap();
+  //     //toast.success("Item added to cart!");
+
+  //     // ✅ Pass full address object to checkout page
+  //     navigate("/checkout", {
+  //       state: {
+  //         fromBuyNow: true,
+  //         product: {
+  //           product_id: product.id,
+  //           variant_id: selectedVariant?.id,
+  //           selling_price: selectedVariant.selling_price, // 💰 send selected price
+  //         },
+  //       },
+  //     });
+  //   } catch (error) {
+  //     toast.error("Something went wrong while buying the product.");
+  //     console.error(error);
+  //   }
+  // });
+
+  // const toggleWishlist = useCallback(async () => {
+  //   try {
+  //     if (!product?.id) return;
+
+  //     if (!isWishlist) {
+  //       // Add to wishlist
+  //       await dispatch(AddWishlist({ product_id: product.id })).unwrap();
+  //       setIsWishlist(true);
+  //       console.log("✅ Added to wishlist");
+  //     } else {
+  //       // Remove from wishlist
+
+  //       console.log(product.id);
+  //       console.log(product);
+
+  //       await dispatch(RemoveWishlist({ productid: product.id })).unwrap();
+  //       setIsWishlist(false);
+  //       console.log("❌ Removed from wishlist");
+  //     }
+  //   } catch (error) {
+  //     console.error("Wishlist toggle failed:", error);
+  //   }
+  // }, [dispatch, isWishlist, product]);
+  const handleBuyNow = useCallback(() => {
+    requireAuth(() => {
       navigate("/checkout", {
         state: {
           fromBuyNow: true,
           product: {
             product_id: product.id,
             variant_id: selectedVariant?.id,
-            selling_price: selectedVariant.selling_price, // 💰 send selected price
+            selling_price: selectedVariant.selling_price,
           },
         },
       });
-    } catch (error) {
-      toast.error("Something went wrong while buying the product.");
-      console.error(error);
-    }
-  });
+    });
+  }, [navigate, requireAuth, product, selectedVariant]);
 
-  const toggleWishlist = useCallback(async () => {
-    try {
-      if (!product?.id) return;
+  const toggleWishlist = useCallback(() => {
+    requireAuth(async () => {
+      try {
+        if (!product?.id) return;
 
-      if (!isWishlist) {
-        // Add to wishlist
-        await dispatch(AddWishlist({ product_id: product.id })).unwrap();
-        setIsWishlist(true);
-        console.log("✅ Added to wishlist");
-      } else {
-        // Remove from wishlist
-
-        console.log(product.id);
-        console.log(product);
-
-        await dispatch(RemoveWishlist({ productid: product.id })).unwrap();
-        setIsWishlist(false);
-        console.log("❌ Removed from wishlist");
+        if (!isWishlist) {
+          await dispatch(AddWishlist({ product_id: product.id })).unwrap();
+          setIsWishlist(true);
+          toast.success("Added to wishlist!");
+        } else {
+          await dispatch(RemoveWishlist({ productid: product.id })).unwrap();
+          setIsWishlist(false);
+          toast.info("Removed from wishlist!");
+        }
+      } catch (error) {
+        console.error("Wishlist toggle failed:", error);
       }
-    } catch (error) {
-      console.error("Wishlist toggle failed:", error);
-    }
-  }, [dispatch, isWishlist, product]);
+    });
+  }, [dispatch, requireAuth, product, isWishlist]);
 
   // Loading state
   if (loading) {
@@ -456,6 +529,13 @@ export const Product_Detail = () => {
           </div>
         </div>
       </div>
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        onLoginSuccess={() => {
+          setIsAuthOpen(false);
+        }}
+      />
     </div>
   );
 };

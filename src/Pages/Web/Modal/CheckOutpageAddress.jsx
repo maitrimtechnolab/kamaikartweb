@@ -15,13 +15,12 @@ export default function CheckoutPage() {
   const buyNowData = location.state?.product || null;
   const fromBuyNow = location.state?.fromBuyNow || false;
 
-
   // Redux selectors
   const { total: cartTotal } = useSelector((state) => state.CartOpration);
   const total = fromBuyNow
-  ? Number(buyNowData?.selling_price || buyNowData?.price || 0)
-  : Number(cartTotal || 0);
-  
+    ? Number(buyNowData?.selling_price || buyNowData?.price || 0)
+    : Number(cartTotal || 0);
+
   const { addresses, loading, error } = useSelector(
     (state) => state.UserAddressOpration
   );
