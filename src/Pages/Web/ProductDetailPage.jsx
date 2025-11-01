@@ -12,6 +12,7 @@ import {
   RemoveWishlist,
 } from "../../Redux/Features/WishlistServicesSlice";
 import { AddTOCart } from "../../Redux/Features/CartServicesSlice";
+import { BuyNow } from "../../Redux/Features/BuynowServicesSlice";
 import toast from "react-hot-toast";
 
 export const Product_Detail = () => {
@@ -201,15 +202,28 @@ export const Product_Detail = () => {
 
   const handleBuyNow = useCallback(async() => {
     // Navigate to checkout
-   
+    // if (!selectedVariant) {
+    //   toast.error("Please select a variant first!");
+    //   return;
+    // }
     try {
-      toast.success("Item added to cart!");
+      // const res = await dispatch(
+      //   BuyNow({
+      //     product_id: product.id,
+      //     variant_id: selectedVariant.id,
+      //   })
+      // ).unwrap();
+      //toast.success("Item added to cart!");
 
       // ✅ Pass full address object to checkout page
       navigate("/checkout", {
         state: {
-          product_id: product.id,
-          variant_id: selectedVariant?.id,
+          fromBuyNow: true,
+          product: {
+            product_id: product.id,
+            variant_id: selectedVariant?.id,
+            selling_price: selectedVariant.selling_price, // 💰 send selected price
+          },
         },
       });
     } catch (error) {

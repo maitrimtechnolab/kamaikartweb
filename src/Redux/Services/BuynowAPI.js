@@ -1,11 +1,11 @@
 import { API } from "../../../Axios";
 
 export const BuynowService = {
-  BuyNow: async (product_id, quantity, variant_id, address_id, payment_id, razor_payment_id) => {
+  BuyNow: async (product_id, variant_id, address_id, payment_id, razor_payment_id) => {
     try {
         const res = await API.post(
             "web/buyNow",
-            { product_id, quantity, variant_id, address_id, payment_id, razor_payment_id },
+            { product_id, variant_id, address_id, payment_id, razor_payment_id },
             {
                 withCredentials: true,
             }

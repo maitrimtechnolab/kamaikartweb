@@ -3,9 +3,9 @@ import { BuynowService } from "../Services/BuynowAPI";
 
 export const BuyNow = createAsyncThunk(
     "Buy/Now",
-    async ({ product_id, quantity, variant_id, address_id, payment_id, razor_payment_id }, { rejectWithValue }) => {
+    async ({ product_id, variant_id, address_id, payment_id, razor_payment_id }, { rejectWithValue }) => {
         try {
-        const res = await BuynowService.BuyNow(product_id, quantity, variant_id, address_id, payment_id, razor_payment_id);
+        const res = await BuynowService.BuyNow(product_id, variant_id, address_id, payment_id, razor_payment_id);
             return res;
         } catch (err) {
         return rejectWithValue(err.response?.data || err.message);

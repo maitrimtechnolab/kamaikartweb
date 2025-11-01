@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { MapPin, Plus, Edit3, Check } from "lucide-react";
 import NewAddressModal from "./NewAddressModal";
 import toast from "react-hot-toast";
@@ -11,8 +11,17 @@ export default function CheckoutPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  const location = useLocation();
+  const buyNowData = location.state?.product || null;
+  const fromBuyNow = location.state?.fromBuyNow || false;
+
+
   // Redux selectors
-  const { total } = useSelector((state) => state.CartOpration);
+  const { total: cartTotal } = useSelector((state) => state.CartOpration);
+  const total = fromBuyNow
+  ? Number(buyNowData?.selling_price || buyNowData?.price || 0)
+  : Number(cartTotal || 0);
+  
   const { addresses, loading, error } = useSelector(
     (state) => state.UserAddressOpration
   );
@@ -99,6 +108,8 @@ export default function CheckoutPage() {
     navigate("/payment", {
       state: {
         selectedAddress: selectedAddressData,
+        fromBuyNow,
+        buyNowData,
       },
     });
   };
@@ -243,6 +254,22 @@ export default function CheckoutPage() {
               </div>
             )}
           </div>
+          {/* {fromBuyNow && buyNowData && (
+            <div className="flex items-center gap-4 mb-4 border-b pb-4">
+              <img
+                src={buyNowData.thumbnail}
+                alt={buyNowData.name}
+                className="w-16 h-16 rounded-lg object-cover"
+              />
+              <div>
+                <p className="font-semibold text-gray-900">{buyNowData.name}</p>
+                <p className="text-sm text-gray-600">Qty: {buyNowData.quantity}</p>
+                <p className="text-blue-600 font-bold mt-1">
+                  ₹{buyNowData.selling_price || buyNowData.price}
+                </p>
+              </div>
+            </div>
+          )} */}
 
           {/* Right Column - Order Summary */}
           <div className="lg:col-span-1">
