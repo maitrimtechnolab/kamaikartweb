@@ -14,6 +14,7 @@ const HowItWorks = () => {
       iconColor: "text-blue-600",
       delay: 0.1,
     },
+
     {
       id: 2,
       icon: Lock,

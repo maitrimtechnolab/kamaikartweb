@@ -17,7 +17,19 @@ export const ApplyPromoCode = createAsyncThunk(
   "web/checkout",
   async (promo_code_id, { rejectWithValue }) => {
     try {
-      const res = await PromocodeService.applyPromoCode({promo_code_id});
+      const res = await PromocodeService.applyPromoCode({ promo_code_id });
+      return res;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
+export const ApplyPromoCodeWithBuyNow = createAsyncThunk(
+  "web/checkout",
+  async (data, { rejectWithValue }) => {
+    try {
+      const res = await PromocodeService.applyPromoCodeForBuyNow(data);
       return res;
     } catch (err) {
       return rejectWithValue(err.response?.data || err.message);
@@ -36,7 +48,7 @@ export const PromoCodeServices = createSlice({
   name: "PromocodeOpration",
   initialState,
   reducers: {
-    setPromocode: (state, action) => {        
+    setPromocode: (state, action) => {
       state.Promocodeitem = action.payload.data;
     },
   },
@@ -67,7 +79,7 @@ export const PromoCodeServices = createSlice({
         state.loading = false;
         state.error = action.payload;
       });
-    },
+  },
 });
 
 export const { setPromocode } = PromoCodeServices.actions;

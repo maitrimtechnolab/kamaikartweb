@@ -66,9 +66,9 @@ const Navigation = () => {
             </button>
             <button className="btn-primary text-sm">
               {" "}
-              <Link to={"https://www.kamaikart.in/seller/register"}>
+              <a to={"https://www.kamaikart.in/seller/register"}>
                 Become a Seller
-              </Link>{" "}
+              </a>{" "}
             </button>
           </div>
 

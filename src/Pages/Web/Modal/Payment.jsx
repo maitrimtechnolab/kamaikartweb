@@ -9,6 +9,7 @@ import { PaymentInfo } from "../../../Redux/Features/PaymentServicesSlice";
 import {
   GetAllPromocodedata,
   ApplyPromoCode,
+  ApplyPromoCodeWithBuyNow,
 } from "../../../Redux/Features/PromoCodeServicesSlice";
 import { BuyNow } from "../../../Redux/Features/BuynowServicesSlice";
 
@@ -21,6 +22,8 @@ export default function PaymentPage() {
   const selectedAddress = location.state?.selectedAddress;
   const buynow = location.state?.buyNowData;
   const fromBuyNow = location.state?.fromBuyNow;
+
+  console.log(buynow);
 
   // Redux selectors
   const { total } = useSelector((state) => state.CartOpration);
@@ -47,6 +50,7 @@ export default function PaymentPage() {
   useEffect(() => {
     dispatch(GetAllPromocodedata());
   }, [dispatch]);
+
   useEffect(() => {
     dispatch(GetCartData());
     dispatch(PaymentInfo());
@@ -97,9 +101,22 @@ export default function PaymentPage() {
   // -----------------------------
   // APPLY PROMO CODE
   // -----------------------------
+
+  let res;
   const handleApplyPromo = async (promo) => {
     try {
-      const res = await dispatch(ApplyPromoCode(promo.id)).unwrap();
+      if (fromBuyNow) {
+        res = await dispatch(
+          ApplyPromoCodeWithBuyNow({
+            product_id: buynow.product_id,
+            variant_id: buynow.variant_id,
+            promo_code_id: promo.id,
+          })
+        ).unwrap();
+      } else {
+        // For normal cart flow
+        res = await dispatch(ApplyPromoCode(promo.id)).unwrap();
+      }
       if (res?.status) {
         setAppliedPromo(res.data);
         toast.success(`${res.data.promo_code} applied successfully!`);

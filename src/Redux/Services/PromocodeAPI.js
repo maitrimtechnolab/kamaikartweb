@@ -18,7 +18,16 @@ export const PromocodeService = {
         withCredentials: true,
       });
 
-      console.log("hiii");
+      return res.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+  applyPromoCodeForBuyNow: async (data) => {
+    try {
+      const res = await API.post("/web/buyNowCheckout", data, {
+        withCredentials: true,
+      });
 
       return res.data;
     } catch (error) {
