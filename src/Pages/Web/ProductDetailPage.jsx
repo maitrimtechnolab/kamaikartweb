@@ -15,17 +15,17 @@ import { AddTOCart } from "../../Redux/Features/CartServicesSlice";
 import { BuyNow } from "../../Redux/Features/BuynowServicesSlice";
 import toast from "react-hot-toast";
 import { AuthModal } from "./AuthModal";
-import {
-  openAuthModal,
-  closeAuthModal,
-} from "../../Redux/Features/AuthenticationServicesSlice";
+
+import ProductSliderHome from "../Product/ProductSliderHome";
+import { GetToprateddata } from "../../Redux/Features/Tranding_ND_TopratedServicesSlice";
 
 export const Product_Detail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const dispatch = useDispatch();
   const { isLoggedIn } = useSelector((state) => state.AuthOpration);
-
+  const { TopratedData, TrandingData, Trandingloading, Trandingerror } =
+    useSelector((state) => state.Tranding_nd_TopratedOpration);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const {
     PersonalProductdata: product,
@@ -36,7 +36,9 @@ export const Product_Detail = () => {
   const [selectedAttributes, setSelectedAttributes] = useState({});
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [isWishlist, setIsWishlist] = useState(false);
-
+  useEffect(() => {
+    dispatch(GetToprateddata());
+  }, [dispatch]);
   // Fetch product data
   useEffect(() => {
     if (id) dispatch(GetProductdatabyId({ id }));
@@ -536,6 +538,10 @@ export const Product_Detail = () => {
           setIsAuthOpen(false);
         }}
       />
+      <div className=" bg-white flex-1 font-bold ">
+        <h1 className="p-5">Similler Product</h1>
+        <ProductSliderHome Productdata={TopratedData} />
+      </div>
     </div>
   );
 };

@@ -23,8 +23,6 @@ export default function PaymentPage() {
   const buynow = location.state?.buyNowData;
   const fromBuyNow = location.state?.fromBuyNow;
 
-  console.log(buynow);
-
   // Redux selectors
   const { total } = useSelector((state) => state.CartOpration);
   const { loading: orderLoading } = useSelector((state) => state.OrderOpration);
@@ -362,6 +360,7 @@ export default function PaymentPage() {
         payment_id: selectedMethod?.id,
         address_id: parseInt(selectedAddress.id),
         razorpay_payment_id: paymentId,
+        promo_code_id: appliedPromo.promo_code_id,
       };
       let result;
 
@@ -374,6 +373,7 @@ export default function PaymentPage() {
             address_id: parseInt(selectedAddress.id),
             payment_id: selectedMethod?.id,
             razor_payment_id: paymentId,
+            promo_code_id: appliedPromo.promo_code_id,
           })
         ).unwrap();
       } else {
