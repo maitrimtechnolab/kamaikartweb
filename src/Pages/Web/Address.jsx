@@ -93,7 +93,7 @@ const AddressPage = () => {
 
   return (
     <>
-      <div className="ml-4 pl-64 p-6 space-y-6 bg-gray-50 min-h-screen">
+      <div className=" space-y-6 bg-gray-50 min-h-screen">
         <Toaster position="top-right" />
 
         <div className="flex justify-between items-center mb-6">

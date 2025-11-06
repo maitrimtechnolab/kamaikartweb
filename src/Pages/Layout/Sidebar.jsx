@@ -123,22 +123,6 @@ const Sidebar = () => {
 
   return (
     <aside className="hidden lg:block w-80 bg-white shadow-lg h-screen sticky top-0">
-      {/* User Header Section */}
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center gap-4">
-          <div className="flex-1">
-            <h2 className="text-lg font-bold text-gray-800">Hello,</h2>
-            <h1 className="text-xl font-bold text-blue-600">Sohan Gohel</h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Welcome back to your account
-            </p>
-          </div>
-          <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-            <FaBell className="text-gray-600 text-lg" />
-          </button>
-        </div>
-      </div>
-
       {/* Navigation Sections */}
       <div className="h-[calc(100vh-160px)] overflow-y-auto custom-scrollbar py-4">
         {menuSections.map((section, sectionIndex) => (

@@ -442,7 +442,7 @@ export default function ProductSliderHome({ Productdata, sliderbox = 5 }) {
       <div className="container mx-auto px-2 lg:px-4">
         <Swiper
           modules={[Navigation]}
-          navigation={true}
+          navigation={isMobile ? false : true}
           spaceBetween={isMobile ? 12 : 24}
           slidesPerView={isMobile ? 2 : sliderbox}
           slidesPerGroup={1}

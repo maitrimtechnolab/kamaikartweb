@@ -61,7 +61,7 @@ const Profile = () => {
   return (
     <>
       {/* Profile Content */}
-      <main className="flex-1 ml-4 pl-64 p-6 space-y-6">
+      <main className="flex-1 space-y-6">
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold mb-4">My Profile</h2>
 
