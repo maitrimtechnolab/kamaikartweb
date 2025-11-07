@@ -14,10 +14,6 @@ export const GetAllProductdata = createAsyncThunk(
     } = {},
     { rejectWithValue }
   ) => {
-    console.log(page, limit, main, sub, child, search);
-
-    console.log(search);
-
     try {
       const res = await ProductService.GetAllProduct(
         page,
@@ -27,8 +23,6 @@ export const GetAllProductdata = createAsyncThunk(
         child,
         search
       );
-
-      console.log(res);
 
       return res.data;
     } catch (error) {
