@@ -68,7 +68,7 @@ export const OrderCard = ({
           ) : (
             <>
               <ChevronDown className="w-4 h-4" />
-              Show All Items
+              Show All ({order.items.length})
             </>
           )}
         </button>
@@ -87,12 +87,15 @@ export const OrderCard = ({
           />
         ))}
       </div>
-
+     
       {/* Show more indicator when not expanded */}
       {!isExpanded && order.items?.length > 3 && (
-        <div className="text-center text-gray-500 text-sm mb-4">
+        <button
+          onClick={onToggleExpansion}
+          className="block mx-auto text-sm text-blue-600 hover:text-blue-800 mb-4 transition-colors"
+        >
           +{order.items.length - 3} more items
-        </div>
+        </button>
       )}
 
       {/* Order Summary */}
@@ -124,7 +127,7 @@ export const OrderCard = ({
           View Details
         </button>
 
-        {order.status === "pending" && (
+        {(order.status === "pending" || order.status === "confirmed") && (
           <button
             onClick={() => onCancelOrder(order)}
             className="flex items-center gap-2 px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium"
